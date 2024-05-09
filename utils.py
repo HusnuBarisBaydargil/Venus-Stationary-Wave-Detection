@@ -2,6 +2,7 @@ import os
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.distributed import DistributedSampler
 
 class ImagePaths(Dataset):
     def __init__(self, path):
@@ -23,7 +24,12 @@ class ImagePaths(Dataset):
         example = self.preprocess_image(self.images[i])
         return example
 
-def load_data(dataset_path, batch_size):
+def load_data(dataset_path, batch_size, is_distributed=False, rank=0, num_replicas=1):
     train_data = ImagePaths(dataset_path)
-    train_loader = DataLoader(train_data, batch_size=batch_size, num_workers=10, shuffle=False)
-    return train_loader
+    if is_distributed:
+        sampler = DistributedSampler(train_data, num_replicas=num_replicas, rank=rank, shuffle=True)
+        train_loader = DataLoader(train_data, batch_size=batch_size, sampler=sampler, num_workers=10, pin_memory=True)
+    else:
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=10, pin_memory=True)
+    
+    return train_loader, sampler if is_distributed else train_loader

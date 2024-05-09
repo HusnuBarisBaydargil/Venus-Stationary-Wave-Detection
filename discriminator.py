@@ -30,8 +30,3 @@ class Discriminator(nn.Module):
         x = self.final_fc(x)
         x = self.sigmoid(x)
         return x
-
-# encoder = Discriminator()
-# dummy_input = torch.randn(1, 1, 128, 128)
-# output = encoder(dummy_input)
-# print(output)

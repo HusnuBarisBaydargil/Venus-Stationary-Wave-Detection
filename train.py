@@ -10,12 +10,34 @@ from torchvision import utils as vutils
 import numpy as np
 from datetime import datetime
 import argparse
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.distributed.elastic.multiprocessing.errors import record
+
+@record
+def main():
+    args = get_args()
+    initialize_cuda_devices(args.gpus)
+    dist.init_process_group(backend='nccl')
+    local_rank = dist.get_rank()
+    trainer = TrainVQGAN(args, local_rank)
+    trainer.train()
+
+def initialize_cuda_devices(gpu_ids):
+    physical_ids = os.environ.get('CUDA_VISIBLE_DEVICES', '').split(',')
+    available_gpus = [str(i) for i in range(len(physical_ids))]
+
+    for gpu in gpu_ids.split(','):
+        if gpu not in available_gpus:
+            print(f"Error: Requested logical GPU {gpu} which maps to physical GPU {physical_ids[int(gpu)]} is not available.")
+            exit(1)
+        print(f"Logical Device {gpu} is available. Maps to Physical GPU {physical_ids[int(gpu)]}")
 
 def get_args():
     parser = argparse.ArgumentParser(description="Train VQGAN Model")
-    parser.add_argument('--device', default='cuda:3', type=str, help='Device to use')
-    parser.add_argument('--epochs', default=150, type=int, help='Number of epochs')
-    parser.add_argument('--threshold', default=5000, type=int, help='Threshold value')
+    parser.add_argument('--gpus', type=str, default='2', help='Comma-separated list of GPU IDs to use (e.g., "0,1")')
+    parser.add_argument('--epochs', default=200, type=int, help='Number of epochs')
+    parser.add_argument('--threshold', default=10000, type=int, help='Threshold value')
     parser.add_argument('--learning_rate', default=2.25e-03, type=float, help='Learning rate')
     parser.add_argument('--epsilon', default=1e-08, type=float, help='Optimizer epsilon')
     parser.add_argument('--beta1', default=0.9, type=float, help='Beta1 for Adam optimizer')
@@ -23,18 +45,23 @@ def get_args():
     parser.add_argument('--data_path', default='/path/to/dataset', type=str, help='Dataset path')
     parser.add_argument('--batch_size', default=32, type=int, help='Batch size')
     parser.add_argument('--experiment_type', default='UVI', type=str, help='Experiment type')
-    return parser.parse_args()
+    args = parser.parse_args()
+    return args
 
 class TrainVQGAN():
-    def __init__(self, args):
+    def __init__(self, args, local_rank):
         self.args = args
-        self.device = args.device
-        self.dataset_path = args.data_path
-        self.epochs = args.epochs
-        self.threshold = args.threshold
-        self.vqgan = VQGAN().to(device=self.device)
-        self.discriminator = Discriminator().to(device=self.device)
+        self.device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")        
+        self.vqgan = VQGAN(device=self.device)
+        self.discriminator = Discriminator().to(self.device)
         self.perceptual_loss = LPIPS().eval().to(self.device)
+
+        self.vqgan = DDP(self.vqgan, device_ids=[local_rank])
+        self.discriminator = DDP(self.discriminator, device_ids=[local_rank])
+
+        self.dataset_path = self.args.data_path
+        self.epochs = self.args.epochs
+        self.threshold = self.args.threshold
         self.opt_vq, self.opt_disc = self.configure_optimizers()
         self.prepare_folders()
 
@@ -54,12 +81,13 @@ class TrainVQGAN():
         print(f"Logging to {self.log_file_path}")
 
     def configure_optimizers(self):
+        vqgan_model = self.vqgan.module if hasattr(self.vqgan, 'module') else self.vqgan
         opt_vq = torch.optim.Adam(
-            list(self.vqgan.encoder.parameters()) +
-            list(self.vqgan.decoder.parameters()) +
-            list(self.vqgan.codebook.parameters()) +
-            list(self.vqgan.quant_conv.parameters()) +
-            list(self.vqgan.post_quant_conv.parameters()),
+            list(vqgan_model.encoder.parameters()) +
+            list(vqgan_model.decoder.parameters()) +
+            list(vqgan_model.codebook.parameters()) +
+            list(vqgan_model.quant_conv.parameters()) +
+            list(vqgan_model.post_quant_conv.parameters()),
             lr=self.args.learning_rate, eps=self.args.epsilon,
             betas=(self.args.beta1, self.args.beta2))
 
@@ -69,18 +97,19 @@ class TrainVQGAN():
         return opt_vq, opt_disc
 
     def train(self):
-        train_dataset = load_data(self.dataset_path, batch_size=self.args.batch_size)
-        steps_per_epoch = len(train_dataset)
-        global_iteration = 0  # Initialize global iteration counter
+        train_loader, sampler = load_data(self.dataset_path, self.args.batch_size, is_distributed=True, rank=dist.get_rank(), num_replicas=dist.get_world_size())
+        steps_per_epoch = len(train_loader)
+        global_iteration = 0 
 
         for epoch in range(self.epochs):
-            with tqdm(total=len(train_dataset), desc=f"Epoch {epoch + 1}/{self.epochs}", unit="batch") as pbar:
-                for i, imgs in enumerate(train_dataset):
+            sampler.set_epoch(epoch)
+            with tqdm(total=steps_per_epoch, desc=f"Epoch {epoch + 1}/{self.epochs}", unit="batch", disable=not (dist.get_rank() == 0)) as pbar:
+                for i, imgs in enumerate(train_loader):
                     imgs = imgs.to(self.device)
-                    decoded_images, _, q_loss = self.vqgan(imgs)
+                    decoded_images, _, q_loss = self.vqgan.module(imgs)  
                     disc_real = self.discriminator(imgs)
                     disc_fake = self.discriminator(decoded_images)
-                    disc_factor = self.vqgan.adopt_weight(1., epoch * steps_per_epoch + i, threshold=self.threshold)
+                    disc_factor = self.vqgan.module.adopt_weight(1., epoch * steps_per_epoch + i, threshold=self.threshold)
                     perceptual_loss = self.perceptual_loss(imgs, decoded_images).mean()
                     rec_loss = torch.abs(imgs - decoded_images).mean()
                     perceptual_rec_loss = perceptual_loss + rec_loss
@@ -113,13 +142,12 @@ class TrainVQGAN():
                     pbar.update(1)
                     global_iteration += 1
 
-                torch.save(self.vqgan.state_dict(), os.path.join(self.checkpoints_path, f"vqgan_epoch_{epoch}.pt"))
-                torch.save(self.discriminator.state_dict(), os.path.join(self.checkpoints_path, f"discriminator_epoch_{epoch}.pt"))
+                torch.save(self.vqgan.module.state_dict(), os.path.join(self.checkpoints_path, f"vqgan_epoch_{epoch}.pt"))  
+                if global_iteration > self.threshold:
+                    torch.save(self.discriminator.module.state_dict(), os.path.join(self.checkpoints_path, f"discriminator_epoch_{epoch}.pt"))
 
         self.log_file.close()
 
 if __name__ == "__main__":
-    args = get_args()
-    trainer = TrainVQGAN(args)
-    trainer.train()                    
+    main()                
     

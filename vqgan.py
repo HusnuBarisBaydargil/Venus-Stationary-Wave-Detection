@@ -3,17 +3,16 @@ import torch.nn as nn
 from encoder import Encoder
 from decoder import Decoder
 from codebook import Codebook
-from utils import load_data
 
 class VQGAN(nn.Module):
-    def __init__(self, device='cuda:3'):
+    def __init__(self, device):
         super(VQGAN, self).__init__()
         self.device = device
-        self.encoder = Encoder().to(device=self.device)
-        self.decoder = Decoder().to(device=self.device)
-        self.codebook = Codebook().to(device=self.device)
-        self.quant_conv = nn.Conv2d(128, 128, 1).to(device=self.device)
-        self.post_quant_conv = nn.Conv2d(128, 128, 1).to(device=self.device)
+        self.encoder = Encoder().to(self.device)
+        self.decoder = Decoder().to(self.device)
+        self.codebook = Codebook().to(self.device)
+        self.quant_conv = nn.Conv2d(128, 128, 1).to(self.device)
+        self.post_quant_conv = nn.Conv2d(128, 128, 1).to(self.device)
         
     def forward(self, imgs):
         encoded_images, skips = self.encoder(imgs)
@@ -42,19 +41,3 @@ class VQGAN(nn.Module):
 
     def load_checkpoint(self, path):
         self.load_state_dict(torch.load(path))
-
-# # Initialize VQGAN with a specified device
-# device = 'cuda:3' if torch.cuda.is_available() else 'cpu'
-# vqgan = VQGAN(device=device)
-
-# trainer = load_data(dataset_path='/home/barisbaydargil/Venus_project/vq_gan/Data/venus_uvi/Grids')
-# first_batch = next(iter(trainer))
-# print(f'dimensions:{first_batch.shape}')
-
-# first_batch = first_batch.to(device)
-# output_images, output_indices, quantization_loss = vqgan(first_batch)
-
-# # Print final output shapes and quantization loss
-# print("Output Images Shape:", output_images.shape)
-# print("Output Indices Shape:", output_indices.shape)
-# print("Quantization Loss:", quantization_loss)

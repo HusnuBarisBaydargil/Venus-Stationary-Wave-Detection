@@ -29,16 +29,3 @@ class Codebook(nn.Module):
         z_q = z_q.permute(0, 3, 1, 2)
 
         return z_q, min_encoding_indices, loss
-    
-# # Create a dummy input tensor
-# dummy_input = torch.randn(1, 128, 8, 8)
-# # Initialize the codebook
-# codebook = Codebook()
-
-# # Forward pass of the dummy input through the codebook
-# quantized_output, min_encoding_indices, vq_loss = codebook(dummy_input)
-
-# # Print the outputs
-# print("Quantized output shape:", quantized_output.shape)
-# print("Minimum encoding indices shape:", min_encoding_indices.shape)
-# print("Vector quantization loss:", vq_loss)

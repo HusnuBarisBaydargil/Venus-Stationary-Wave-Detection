@@ -1,6 +1,6 @@
 # Stationary Wave Detection and Localization
 This repository contains the code for our paper, titled "Detection and Localization of Stationary Waves on Venus Using a Self-Supervised Anomaly Detection Model".
-(images/StationaryWave_Example_LIR_UVI.png)
+![](images/StationaryWave_Example_LIR_UVI.png)
 ## System Requirements and Setup
 We run our experiments in Ubuntu 20.04 using Nvidia A100 GPU.
 To set up and use the required environment for this project, follow these steps:

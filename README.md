@@ -22,14 +22,32 @@ Prepare the dataset using the preprocessing step below:
 ```bash
 python data_preprocessing.py --input_dir path/to/input --output_dir path/to/output --workers 4 --datatype uvi_or_lir
 ```
-**input_dir:** The directory where your dataset is located.
 
-**output_dir:** The directory to which you want the preprocessed grid images to be saved.
+If you would like to crop your grids from images, you can use our grid_cropper_UI.py script.
 
-**workers:** Number of CPU cores you would like to utilize. WARNING: Increasing this number can significantly slow down your computer. To check the available number of CPU cores in your Ubuntu, you can type `lscpu` into the terminal, and type `wmic cpu get NumberOfCores, NumberOfLogicalProcessors` in cmd in Windows.
-
-**datatype:** The data type you're preprocessing. Either uvi or lir.
-
+An example of the model training script can be seen below:
+```bash
+CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.run \
+    --nproc_per_node=1 \
+    --nnodes=1 \
+    --master_port=12345 \
+    multigpu_train.py \
+    --data_path /path/to/your/dataset \
+    --experiment_type YourExperimentType \
+    --gpus '0'
+```
+If you would like to utilize multiple GPUs, an example script can be seen below:
+```bash
+CUDA_VISIBLE_DEVICES=2,3 python -m torch.distributed.run \
+    --nproc_per_node=2 \
+    --nnodes=1 \
+    --master_port=12345 \
+    multigpu_train.py \
+    --data_path /path/to/your/dataset \
+    --experiment_type YourExperimentType \
+    --gpus '0,1'
+```
+## Testing 
 
 ## Testing
 

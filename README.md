@@ -9,6 +9,14 @@ To set up and use the required environment for this project, follow these steps:
    ```bash
    conda create -n venus_waves python=3.9
 
+2. **Activate the environment:**
+   ```bash
+   conda activate venus_waves
+
+3. **Install the required libraries:**
+   ```bash
+   pip install -r requirements.txt
+
 ## Training 
 
 ## Testing

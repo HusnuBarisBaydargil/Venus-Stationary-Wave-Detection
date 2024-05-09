@@ -17,6 +17,11 @@ To set up and use the required environment for this project, follow these steps:
    ```bash
    pip install -r requirements.txt
 
+After the setup is complete, prepare the dataset using the preprocessing step below:
+```bash
+python data_preprocessing.py --input_dir path/to/input --output_dir path/to/output --workers 4 --datatype uvi_or_lir
+
+
 ## Training 
 
 ## Testing

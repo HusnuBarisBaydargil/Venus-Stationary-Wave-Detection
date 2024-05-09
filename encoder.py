@@ -31,12 +31,3 @@ class Encoder(nn.Module):
                 x = nonlocal_block(x)
             skips.append(x)
         return x, skips
-
-# encoder = Encoder()
-# nonlocal_blocks_count = len(encoder.nonlocal_blocks)
-# print("Number of NonLocalBlock layers:", nonlocal_blocks_count)
-# total_params = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
-# print("Total number of trainable parameters:", total_params)
-# image = torch.randn(1, 1, 128, 128)
-# encoded, skips = encoder(image)
-# print("Encoded output size:", encoded.size())

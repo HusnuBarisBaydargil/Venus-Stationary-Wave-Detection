@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 import os
 
@@ -8,13 +8,16 @@ class ImageCroppingAppEnhanced:
         self.root = root
         self.root.title("Enhanced Image Cropping Tool")
         self.root.state('zoomed')
-
-        # Button frame
+        self.rect_size = [128, 128]
+        
         button_frame = tk.Frame(root, padx=10, pady=10)
         button_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         self.load_button = tk.Button(button_frame, text="Load Image", command=self.load_image)
         self.load_button.pack(fill=tk.X)
+
+        self.set_rect_size_button = tk.Button(button_frame, text="Set Rectangle Size", command=self.set_rect_size)
+        self.set_rect_size_button.pack(fill=tk.X)
 
         self.delete_all_button = tk.Button(button_frame, text="Delete All", command=lambda: self.confirm_action(self.delete_all))
         self.delete_all_button.pack(fill=tk.X)
@@ -42,19 +45,23 @@ class ImageCroppingAppEnhanced:
         self.canvas.configure(xscrollcommand=self.h_scroll.set, yscrollcommand=self.v_scroll.set)
 
         self.rect_id = None
-        self.rect_size = (128, 128)
         self.image = None
         self.image_id = None
         self.image_path = None
         self.thumbnails = []
         self.labels = []
 
-        # For panning
-        self._drag_data = {"x": 0, "y": 0}
-
         # Bind mouse events
         self.canvas.bind('<Motion>', self.move_rect)
         self.canvas.bind('<Button-1>', self.crop_image)
+
+    def set_rect_size(self):
+        new_width = simpledialog.askinteger("Set Width", "Enter new width:", parent=self.root, minvalue=1, initialvalue=self.rect_size[0])
+        new_height = simpledialog.askinteger("Set Height", "Enter new height:", parent=self.root, minvalue=1, initialvalue=self.rect_size[1])
+        if new_width and new_height:
+            self.rect_size = [new_width, new_height]
+            if self.rect_id:
+                self.move_rect(None)  # Update rectangle size on canvas if needed
 
     def on_mouse_wheel(self, event):
         self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -74,7 +81,7 @@ class ImageCroppingAppEnhanced:
     def confirm_action(self, action):
         if messagebox.askyesno("Confirmation", "Are you sure?"):
             action()
-            
+
     def load_image(self):
         filepath = filedialog.askopenfilename()
         if not filepath:
@@ -94,7 +101,6 @@ class ImageCroppingAppEnhanced:
             self.labels.clear()
             self.delete_all_bounding_boxes()
 
-            # Only update self.image_path if a new image is successfully loaded
             self.image_path = filepath
             self.rect_id = self.canvas.create_rectangle(0, 0, self.rect_size[0], self.rect_size[1], outline='red')
         except Exception as e:
@@ -104,7 +110,7 @@ class ImageCroppingAppEnhanced:
         if not self.image:
             return
 
-        canvas_coords = (self.canvas.canvasx(event.x), self.canvas.canvasy(event.y))
+        canvas_coords = (self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)) if event else (0, 0)
         x0 = max(0, min(canvas_coords[0], self.image.width - self.rect_size[0]))
         y0 = max(0, min(canvas_coords[1], self.image.height - self.rect_size[1]))
         self.canvas.coords(self.rect_id, x0, y0, x0 + self.rect_size[0], y0 + self.rect_size[1])
@@ -117,7 +123,7 @@ class ImageCroppingAppEnhanced:
         x1, y1, x2, y2 = self.canvas.coords(self.rect_id)
         cropped_img = self.image.crop((x1, y1, x2, y2)).convert('L')
         tk_thumbnail = ImageTk.PhotoImage(cropped_img)
-        self.thumbnails.append((tk_thumbnail, (x1, y1, x2, y2)))  # Ensure this is a tuple
+        self.thumbnails.append((tk_thumbnail, (x1, y1, x2, y2)))
         tag = f"rect{len(self.thumbnails)}"
         self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', tags=tag)
         label = self.canvas.create_text(x1 + 64, y1 + 64, text=str(len(self.thumbnails)), fill='red', tags=tag)
@@ -137,7 +143,7 @@ class ImageCroppingAppEnhanced:
         x_offset = 20
         y_offset = 100
         column = 0
-        for idx, (thumb, coords) in enumerate(self.thumbnails):  # Corrected access
+        for idx, (thumb, coords) in enumerate(self.thumbnails):
             if idx % 6 == 0 and idx > 0:
                 column += 1
                 y_offset = 100

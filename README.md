@@ -23,7 +23,7 @@ Prepare the dataset using the preprocessing step below:
 python data_preprocessing.py --input_dir path/to/input --output_dir path/to/output --workers 4 --datatype uvi_or_lir
 ```
 
-If you would like to crop your grids from images, you can use our grid_cropper_UI.py script.
+If you would like to crop your grids from images, you can use our `grid_cropper_UI.py` script.
 
 An example of the model training script can be seen below:
 ```bash

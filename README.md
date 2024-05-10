@@ -31,7 +31,7 @@ CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.run \
     --nproc_per_node=1 \
     --nnodes=1 \
     --master_port=12345 \
-    multigpu_train.py \
+    train.py \
     --data_path /path/to/your/dataset \
     --experiment_type YourExperimentType \
     --gpus '0'
@@ -42,7 +42,7 @@ CUDA_VISIBLE_DEVICES=2,3 python -m torch.distributed.run \
     --nproc_per_node=2 \
     --nnodes=1 \
     --master_port=12345 \
-    multigpu_train.py \
+    train.py \
     --data_path /path/to/your/dataset \
     --experiment_type YourExperimentType \
     --gpus '0,1'

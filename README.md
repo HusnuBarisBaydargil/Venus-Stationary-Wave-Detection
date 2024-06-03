@@ -17,6 +17,10 @@ To set up and use the required environment for this project, follow these steps:
    ```bash
    pip install -r requirements.txt
 
+## Download the UVI and LIR datasets
+
+[Download the file from Google Drive](https://drive.google.com/uc?export=download&id=1T4ZFRP7V-_1gKvfZNUgg-xHw8OmGsbXw)
+
 ## Training 
 Prepare the dataset using the preprocessing step below:
 ```bash

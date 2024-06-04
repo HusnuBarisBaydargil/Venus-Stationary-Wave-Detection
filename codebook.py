@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 
 class Codebook(nn.Module):
-    def __init__(self):
+    def __init__(self, args):
         super(Codebook, self).__init__()
-        self.num_codebook_vectors = 256
-        self.latent_dim = 128 * 8 * 8
-        self.beta = 0.25
+        self.num_codebook_vectors = args.num_codebook_vectors
+        self.latent_dim = args.latent_dim
+        self.beta = args.beta
 
         self.embedding = nn.Embedding(self.num_codebook_vectors, self.latent_dim)
         self.embedding.weight.data.uniform_(-1.0 / self.num_codebook_vectors, 1.0 / self.num_codebook_vectors)

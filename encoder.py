@@ -46,7 +46,7 @@ class Encoder(nn.Module):
     def _build_layers(self, args):
         layers = self._initial_layers(args)
         layers.extend(self._residual_and_downsample_layers())
-        layers.extend(self._final_layers())
+        layers.extend(self._final_layers(args))
         return layers
 
     def forward(self, x):

@@ -5,27 +5,37 @@ from decoder import Decoder
 from codebook import Codebook
 
 class VQGAN(nn.Module):
-    def __init__(self, device):
+    def __init__(self, args):
         super(VQGAN, self).__init__()
-        self.device = device
-        self.encoder = Encoder().to(self.device)
-        self.decoder = Decoder().to(self.device)
-        self.codebook = Codebook().to(self.device)
-        self.quant_conv = nn.Conv2d(128, 128, 1).to(self.device)
-        self.post_quant_conv = nn.Conv2d(128, 128, 1).to(self.device)
-        
+        self.encoder = Encoder(args).to(device=args.device)
+        self.decoder = Decoder(args).to(device=args.device)
+        self.codebook = Codebook(args).to(device=args.device)
+        self.quant_conv = nn.Conv2d(args.latent_dim, args.latent_dim, 1).to(device=args.device)
+        self.post_quant_conv = nn.Conv2d(args.latent_dim, args.latent_dim, 1).to(device=args.device)
+
     def forward(self, imgs):
-        encoded_images, skips = self.encoder(imgs)
+        encoded_images = self.encoder(imgs)
         quant_conv_encoded_images = self.quant_conv(encoded_images)
         codebook_mapping, codebook_indices, q_loss = self.codebook(quant_conv_encoded_images)
         post_quant_conv_mapping = self.post_quant_conv(codebook_mapping)
-        decoded_images = self.decoder(post_quant_conv_mapping, skips[::-1])  
-        
+        decoded_images = self.decoder(post_quant_conv_mapping)
+
         return decoded_images, codebook_indices, q_loss
 
+    def encode(self, imgs):
+        encoded_images = self.encoder(imgs)
+        quant_conv_encoded_images = self.quant_conv(encoded_images)
+        codebook_mapping, codebook_indices, q_loss = self.codebook(quant_conv_encoded_images)
+        return codebook_mapping, codebook_indices, q_loss
+
+    def decode(self, z):
+        post_quant_conv_mapping = self.post_quant_conv(z)
+        decoded_images = self.decoder(post_quant_conv_mapping)
+        return decoded_images
+
     def calculate_lambda(self, perceptual_loss, gan_loss):
-        last_conv_layer = self.decoder.final_conv
-        last_layer_weight = last_conv_layer.weight
+        last_layer = self.decoder.model[-1]
+        last_layer_weight = last_layer.weight
         perceptual_loss_grads = torch.autograd.grad(perceptual_loss, last_layer_weight, retain_graph=True)[0]
         gan_loss_grads = torch.autograd.grad(gan_loss, last_layer_weight, retain_graph=True)[0]
 

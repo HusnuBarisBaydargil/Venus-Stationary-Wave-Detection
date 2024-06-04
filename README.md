@@ -19,7 +19,7 @@ To set up and use the required environment for this project, follow these steps:
 
 ## Download the UVI and LIR datasets
 
-[Download the file from Google Drive](https://drive.google.com/uc?export=download&id=1T4ZFRP7V-_1gKvfZNUgg-xHw8OmGsbXw)
+[Download from Google Drive](https://drive.google.com/uc?export=download&id=1T4ZFRP7V-_1gKvfZNUgg-xHw8OmGsbXw)
 
 ## Training 
 Prepare the dataset using the preprocessing step below:
@@ -29,28 +29,15 @@ python data_preprocessing.py --input_dir path/to/input --output_dir path/to/outp
 
 If you want to crop your grids from images, use our `grid_cropper_UI.py` script.
 
-An example of the model training script can be seen below:
-```bash
-CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.run \
-    --nproc_per_node=1 \
-    --nnodes=1 \
-    --master_port=12345 \
-    train.py \
-    --data_path /path/to/your/dataset \
-    --experiment_type YourExperimentType \
-    --gpus '0'
-```
-If you would like to utilize multiple GPUs, an example script can be seen below:
-```bash
-CUDA_VISIBLE_DEVICES=2,3 python -m torch.distributed.run \
-    --nproc_per_node=2 \
-    --nnodes=1 \
-    --master_port=12345 \
-    train.py \
-    --data_path /path/to/your/dataset \
-    --experiment_type YourExperimentType \
-    --gpus '0,1'
-```
-## Testing 
+To train the model, run the script `train.py`
 
+## Testing 
+To test the model after training, run the script below:
+```bash
+python inference.py --image_path /path/to/inference/image \
+                    --weights_path /path/to/model/weight \
+                    --output_dir /path/to/resulting/image \
+                    --device cuda:2
+```
+You can download our pretrained weight [from here](https://drive.google.com/file/d/1gfI0BjzUdce8i8qY8tO_pkzfCzzGx8zA/view?usp=sharing)
 ## Citation

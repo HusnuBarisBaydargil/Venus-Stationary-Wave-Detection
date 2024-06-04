@@ -39,5 +39,4 @@ python inference.py --image_path /path/to/inference/image \
                     --output_dir /path/to/resulting/image \
                     --device cuda:2
 ```
-You can download our pretrained weight [from here](https://drive.google.com/file/d/1gfI0BjzUdce8i8qY8tO_pkzfCzzGx8zA/view?usp=sharing)
-## Citation
+You can download our pretrained model weight [from here](https://drive.google.com/file/d/1gfI0BjzUdce8i8qY8tO_pkzfCzzGx8zA/view?usp=sharing)

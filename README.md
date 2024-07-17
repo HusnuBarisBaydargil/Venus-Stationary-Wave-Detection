@@ -35,6 +35,6 @@ To test the model after training, run the script below:
 python inference.py --image_path /path/to/inference/image \
                     --weights_path /path/to/model/weight \
                     --output_dir /path/to/resulting/image \
-                    --device cuda:2
+                    --device cuda
 ```
 You can download our pretrained model weight [from here](https://drive.google.com/file/d/1gfI0BjzUdce8i8qY8tO_pkzfCzzGx8zA/view?usp=sharing)

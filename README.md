@@ -1,5 +1,5 @@
 # Stationary Wave Detection and Localization
-This repository contains the code for our paper, titled "Detection and Localization of Stationary Waves on Venus Using a Self-Supervised Anomaly Detection Model".
+This repository contains the code article, titled "Detection and Localization of Stationary Waves on Venus Using a Self-Supervised Anomaly Detection Model".
 ![](images/StationaryWave_Example_LIR_UVI.png)
 ## System Requirements and Setup
 We run our experiments in Ubuntu 20.04 using Nvidia A100 GPU.
@@ -38,3 +38,19 @@ python inference.py --image_path /path/to/inference/image \
                     --device cuda
 ```
 You can download our pretrained model weight [from here](https://drive.google.com/file/d/1gfI0BjzUdce8i8qY8tO_pkzfCzzGx8zA/view?usp=sharing)
+
+## Citation
+
+If you find this work useful, please cite our paper:
+
+```bibtex
+@article{Baydargil2025Detection,
+  author  = {Baydargil, Husnu Baris and Oliveira Silva, Jose Eduardo and Lee, Yeon Joo and Cha, Meeyoung},
+  title   = {Detection and Localization of Stationary Waves on Venus Using a Self-Supervised Anomaly Detection Model},
+  journal = {Journal of Geophysical Research: Machine Learning and Computation},
+  volume  = {2},
+  number  = {1},
+  pages   = {e2024JH000306},
+  doi     = {10.1029/2024JH000306},
+  keywords = {Venus, stationary wave, deep learning, anomaly detection, localization}
+}
